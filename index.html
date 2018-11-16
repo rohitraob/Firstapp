@@ -1,0 +1,998 @@
+<?php 
+
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+unset($_SESSION['uc_coupons']);
+unset($_SESSION['description']);
+unset($_SESSION['amount_to_pay']);
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-W4FZMR');</script>
+<!-- End Google Tag Manager -->
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Template Title -->
+<title>Payment Process</title>
+<link rel="shortcut icon" href="/misc/files/img/favicon.ico" type="image/x-icon">
+
+<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,600italic,700,800' rel='stylesheet' type='text/css'>
+<!-- Bootstrap 3.2.0 stylesheet -->
+<link href="/misc/payment/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Font Awesome Icon stylesheet -->
+<link href="/misc/payment/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+<!-- Custom stylesheet -->
+<link href="/misc/payment/css/style-bank.css" rel="stylesheet">
+
+
+
+
+
+<!-- Custom Responsive stylesheet -->
+<link href="/misc/payment/css/responsive.css" rel="stylesheet">
+
+<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+      <link rel="stylesheet" href="/misc/payment/css/jquery-ui.css">
+    <script src="/misc/payment/js/jquery-1.10.2.js"></script>
+      <script src="/misc/payment/js/jquery-ui.js"></script>
+      
+      <script>
+      $(function() {
+      $( "#datepicker" ).datepicker();
+      });
+  
+
+      
+    </script>
+      <script>
+    $('a .panel-heading').on('click',function(e){
+      if($(this).parents('.panel').children('.panel-collapse').hasClass('in')){
+        e.stopPropagation();
+      }
+      // You can also add preventDefault to remove the anchor behavior that makes
+      // the page jump
+      // e.preventDefault();
+    });
+    </script>
+    
+    
+    
+<?php
+global $user;
+$query_parameters = drupal_get_query_parameters(); 
+
+$coupon = $_SESSION['referral'];
+if($coupon ){
+ $_SESSION['uc_coupons'] = array($coupon => 'retain');
+}
+
+$uid = $query_parameters["uid"];
+
+$user = user_load($uid);
+$login_array = array ('name' => $user->name);
+user_login_finalize($login_array);
+
+$userLoaded = $user;
+$user_roles = $userLoaded->roles;
+if(array_key_exists('367', $user_roles)){ // EP LKEY
+  $category = "ep_sfm_v";
+} else if(array_key_exists('372', $user_roles)){ // EP LKEY
+  $category = "ep_mcr";
+} else if(array_key_exists('355', $user_roles)){ // EP LKEY
+  $category = "ep_lkey";
+} else if(array_key_exists('354', $user_roles)){ // EP SFM
+  $category = "ep_sfm";
+} else if(array_key_exists('339', $user_roles)){ // EP SPECIAL
+  $category = "ep_special";
+} else if(array_key_exists('380', $user_roles)){ // clerk
+  $category = "current_clerk";
+} else if(array_key_exists('383', $user_roles)){ // ssc
+  $category = "current_ssc";
+} else if(array_key_exists('384', $user_roles)){ // opsc
+  $category = "current_opsc";
+} else if(array_key_exists('387', $user_roles)){ // Expired opsc
+  $category = "expired_opsc";
+} else if(array_key_exists('385', $user_roles) && !array_key_exists('325', $user_roles)){ // opsc landing page 
+  $category = "opsc";
+  echo "<script>setTimeout(function(){ $('p.coupon_sec').html('Use <b>DIWALI40</b> to get flat <b>40% off</b>'); 
+      $('.top_promo img').attr('src','/misc/camp-05-11-2018/Diwali-Top-Strip_40_v1.png')
+  }, 1000);</script>";
+} else if(array_key_exists('312', $user_roles) || (array_key_exists('16', $user_roles) && array_key_exists('312', $user_roles))){ // Current Yearly
+  $category = "current_yearly";
+} else if((array_key_exists('341', $user_roles))){ // Current Half Yearly
+  $category = "current_half_yearly";
+} else if(array_key_exists('362', $user_roles)){ // Current quarterly 
+  $category = "current_quarterly";
+} else if(array_key_exists('311', $user_roles)){ // Current Monthly 18-MNTHLY
+  $category = "current_monthly";
+} else if((array_key_exists('16', $user_roles) || array_key_exists('316', $user_roles))){ // Expired Yearly
+  $category = "expired_yearly";
+} else if(array_key_exists('342', $user_roles)){ // Expired quarterly
+  $category = "expired_half_yearly";
+} else if(array_key_exists('363', $user_roles)){ // Expired Half Yearly
+  $category = "expired_quarterly";
+} else if(array_key_exists('315', $user_roles)){ // Expired Monthly Not 18-MNTHLY
+  $category = "expired_monthly";
+} else if(array_key_exists('388', $user_roles)){ // Expired clerk
+  $category = "expired_clerk";
+} else if(array_key_exists('386', $user_roles)){ // Expired ssc
+  $category = "expired_ssc";
+} else if(array_key_exists('310', $user_roles) && !array_key_exists('331', $user_roles)){ // EP SPECIAL
+  $category = "free";
+  echo "<script>setTimeout(function(){ $('p.coupon_sec').html('Use <b>DIWALI40</b> to get flat <b>40% off</b>'); 
+      $('.top_promo img').attr('src','/misc/camp-05-11-2018/Diwali-Top-Strip_40_v1.png')
+  }, 1000);</script>";
+} else {
+  $category = "free_expired";
+    echo "<script>setTimeout(function(){ $('p.coupon_sec').html('Use <b>DIWALI40</b> to get flat <b>40% off</b>'); 
+     $('.top_promo img').attr('src','/misc/camp-05-11-2018/Diwali-Top-Strip_40_v1.png')
+  }, 1000);</script>";
+}
+
+include ($_SERVER['DOCUMENT_ROOT'].'/misc/examprep-with-coupons.txt');
+
+$bu = 'Bank';
+
+$bu_category_course_coupon = json_decode($json,true);
+
+$category_course_coupon = $bu_category_course_coupon[$bu];
+
+$course_coupon = $category_course_coupon[$category];
+?>
+<!-- JSON Code here -->
+<script>
+
+<?php 
+echo "var course_coupon_data =JSON.parse('". json_encode($course_coupon)."');";
+?>
+
+
+
+ $(document).ready(function(main_category_name){
+ 
+ var get_product = Object.keys(course_coupon_data.products);
+ var get_coupon = [];
+  window.category_name = course_coupon_data.display;
+  
+  $('span.product-name').html(window.category_name);
+  
+  $.each(course_coupon_data.products, function(code, product_data){
+  window.productId = code;
+  var html = '<div class="row  '+code+'"><div class="col-md-1" style="padding:0px"><center><img src="/misc/'+product_data.image+'" class="addon-icon img-responsive"></center></div><div class="col-md-7"><div class="format-content1"><h3 class="'+ product_data.type+'"> '+ product_data.type+' </h3><p>'+product_data.message+'</p><p id="row_msg">'+ product_data.row_msg+'</p></div></div><div class="col-md-2"><div class="cc_mrp"><i class="fa fa-rupee"></i> '+ product_data.price+' <br><img class="course_end_img" src="/misc/'+ product_data.course_end+'"></div></div><div class="col-md-2" id="format-price"><h3 class="remove"><i class="fa fa-inr"></i> '+ product_data.price+' </h3><div id="ck-button-'+code+'" data-product-id="'+code+'" class="pay-button" data-toggle="collapse" data-parent="#accordion" href="#offer" onclick="showCoupons(\''+code+'\')"><label><input type="radio" value="1" name="button1" class="cta-submit btn format-button" data-product_id="" ><span><i class="fa fa-caret-right"></i> Select</span></label></div></div></div> ';
+  $('.products').append(html);
+  }); 
+  
+  
+  
+});
+
+function showCoupons(code){
+  var product_data = course_coupon_data.products[code];
+  
+  $( ".products-coupons" ).empty();
+
+  for( var index in product_data.coupon){
+      var coupon_data = product_data.coupon[index];
+      
+      if(coupon_data.status){
+      var coupon_html = '<div class="row coupon-block ' +coupon_data.status+'"><div class="col-md-7 col-sm-7"><div class="format-icon"> <img src="/misc/payment/images/mrp_v1.png"  class="img-lighti" style="height: 40px;"  > </div><div class="format-content mrpe"><h3>'+coupon_data.type+'</h3><h4 class="coupon-message">'+coupon_data.message+'</h4></div></div><div class="col-md-5 col-md-offset-0 format-price col-xs-offset-3"><div id="ck-button"><label href="#address"><input type="radio" value="7" name="button2" class="cta-submit btn offers-button" data-product_id="'+code+'" disabled="true"><span><i class="fa fa-caret-right"></i> Closed</span></label></div></div></div>';
+      }else{
+      var coupon_html = '<div class="row coupon-block '+coupon_data.code+'"><div class="col-md-6 col-sm-6"><div class="format-icon"> <img src="/misc/payment/images/mrp_v1.png"  class="img-lighti" style="height: 40px;"  > </div><div class="format-content mrpe"><h3>'+coupon_data.type+'</h3><p class="coupon-message">'+coupon_data.validity+'</p></div></div><div class="col-md-3"><div class="co_mrp"><i class="fa fa-rupee"></i> '+coupon_data.message+'</div></div><div class="col-md-3 col-md-offset-0 format-price col-xs-offset-3"><div id="ck-button"><label href="#address"><input type="radio" value="7" name="button2" class="cta-submit btn offers-button" onclick="final(\''+code+'\',\''+coupon_data.code+'\')" data-product_id="'+code+'" data-coupon="'+coupon_data.code+'"><span><i class="fa fa-caret-right"></i> Join Now</span></label></div></div></div>';
+      }
+      
+      if(code == "2589a"){ 
+      window.partial = coupon_data.partial; 
+      }
+    $('.products-coupons').append(coupon_html); 
+    window.productId = code;
+    }
+    
+    $('.coupon-message i').addClass("fa fa-inr");
+    $('.format-content i').addClass("fa fa-inr");
+    $('.row.coupon-block.FLAT20 .format-icon img').attr('src','/misc/payment/images/20-flat.png')
+}
+
+function final(code,cou){
+    quantity = 1;
+    if(course_coupon_data.products[code].hasOwnProperty('quantity')){
+        quantity = course_coupon_data.products[code].quantity;
+    }
+  
+    dataLayer.push({
+    'event': 'checkout',
+    'ecommerce': {
+      'checkout': {
+        'actionField': {'step': 5, 'option': 'Apply Offer'},
+        'products': [{
+       'name': window.selectName,
+       'id': window.selectId,
+       'price': window.selectPrice,
+       'brand': window.productBrand,
+       'category': window.productCategory,
+       'variant': window.productVariant,
+       'quantity': quantity
+       }]
+     }
+   },
+   'event' : 'ecStep5'
+  });
+  
+   logMXWebEvent(3292, 198, 'Discount Applied');
+  
+  if(code == "2589a"){
+    $.ajax({
+        url: '/session-storage.dpl',
+        data: {amount_to_pay: window.partial},
+        type: 'POST',
+        dataType: 'JSON',
+        async: false
+      });
+    window.purchase = "https://www.talentsprint.com/cart/add/e-p"+code+"_q"+quantity+"?destination=cart/checkout&c="+cou;
+    window.location="https://www.talentsprint.com/cart/add/e-p"+code+"_q"+quantity+"?destination=cart/checkout&c="+cou;
+  }else{
+    window.purchase = "https://www.talentsprint.com/cart/add/e-p"+code+"_q"+quantity+"?destination=cart/checkout&c="+cou;
+    window.location="https://www.talentsprint.com/cart/add/e-p"+code+"_q"+quantity+"?destination=cart/checkout&c="+cou;
+  }
+
+}
+
+
+
+</script>
+    
+<style>
+.pay-button label span {
+    text-align: center;
+    padding: 4px 15px 4px;
+    display: block;
+    border: 2px solid #f26522;
+    border-radius: 4px;
+    color: #f26522;
+    cursor: pointer;
+}
+.pay-button label {
+    display: inline-block;
+    /* max-width: 100%; */
+    margin-bottom: 5px;
+    font-weight: 700;
+}
+
+.pay-button {
+    overflow: auto;
+    cursor: pointer;
+}
+
+.pay-button label input {
+    position: absolute;
+    top: -20px;
+    display: none;
+}
+.pay-button label span:hover {
+    background-color: #f26522;
+    color: #fff;
+}
+
+.row.coupon-block {
+    padding: 20px 0;
+}
+
+.panel-body {
+    padding: 20px 40px 40px 40px;
+}
+
+h3.Online {
+    background: url(/misc/payment/images/online-icon-small.png) no-repeat;
+    padding: 0 0 0 35px;
+      line-height: 24px;
+}
+
+h3.Pendrive {
+    background: url(/misc/payment/images/pendrive-icon-small.png) no-repeat;
+    padding: 0 0 0 35px;
+}
+
+/*.products-coupons .coupon-block:nth-child(2) .format-content.mrpe h5 {
+    color: #ff0000;
+}*/
+
+h4.coupon-message {
+    font-weight: 400;
+}
+.remove{display:none;}
+
+
+#ck-button label span {
+    padding: 4px 20px 4px;
+}
+
+.cc_mrp, .co_mrp {
+    color: #000;
+    font-weight: bold;
+    text-align: center;
+}
+.top_promo {
+    text-align: center;
+    margin: 10px auto;
+}
+span.Offer_sec {
+    text-align: center;
+    display: block;
+    margin: 10px auto;
+    background: yellow;
+    color: #000;
+    font-size: 18px;
+    width: 50%;
+    border-radius: 50px;
+    font-weight: 600;
+}
+.top_promo img {
+    margin: auto;
+}
+
+.payment-bg {
+    background: #bed5d8;
+    /* camp */
+   /* background-image: url(https://www.talentsprint.com/misc/Diwali-Background-Image.png);*/
+    background-size: cover;
+}
+p.coupon_sec {
+    display: none;
+}
+
+.format-content.mrpe h5 {
+    font-size: 17px;
+    font-weight: 600;
+    color: #000;
+    margin-bottom: 10px;
+}
+.panel-group .panel-heading{    background: #1972a3;}
+
+.format-content h4 , .format-content p, .format-content1 p {
+  color:#000;
+}
+.format-content h3, .format-content1 h3 {
+  font-weight: normal;
+}
+
+.products .row {
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 30px;
+}
+
+#row_msg {
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    color: red;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.products .row:nth-last-child(1) {
+    margin-bottom: 0;
+}
+.co_mrp i.fa.fa-rupee{    color: red;}
+.fa-caret-right:before{display: none;}
+.col-md-4.side_bar{    margin: 20px 0px;    margin-top: -125px;}
+strike {
+  margin-right:10px;
+    color: red;
+}
+/*.panel-group .panel-heading {
+background: #77469a;
+}*/
+.contact span{    color: #464646;}
+.addon-icon {
+    height: 55px;
+    /* border: 1px dashed #f35429; */
+    border-radius: 0%;
+}
+img{max-width:none!important;}
+img.course_end_img {
+    width: 125px;
+    margin-left: -15px;
+}
+/* footer'*/
+li{list-style:none}
+.footer ul li{margin-bottom:0}
+.footer{background:#fff;margin-top:0;border-top:1px solid #e6e6e6;padding-bottom:25px;padding-top:25px}
+.footer .form-control{height:40px;padding:6px 20px;background-color:#f4f7f9;border:1px solid #f4f7f9;font-weight:600}
+.footer .footer-col{padding:10px 0 5px;text-align:left}
+.footer .footer-col h6{margin-bottom:10px;font-weight:400;font-size:16px}
+.social-icons h6{margin-bottom:10px!important}
+.footer .footer-col .social-icons{padding-top:5px}
+.footer .social-icons a{color:#FFF;font-size:20px;margin-right:6px;background:#5e6467;height:30px;width:30px;display:inline-block;line-height:30px;text-align:center;border-radius:4px}
+.footer .social-icons a.facebook:hover,.footer .footer-col .social-icons a.facebook:active,.footer .footer-col .social-icons a.facebook:focus{color:#fff;background:#3b5998}
+.footer .social-icons a.twitter:hover,.footer .footer-col .social-icons a.twitter:active,.footer .footer-col .social-icons a.twitter:focus{color:#fff;background:#1c9ff1}
+.footer .social-icons a.google-plus:hover,.footer .footer-col .social-icons a.google-plus:active,.footer .footer-col .social-icons a.google-plus:focus{color:#fff;background:#d84439}
+.footer .social-icons a.youtube:hover,.footer .footer-col .social-icons a.youtube:active,.footer .footer-col .social-icons a.youtube:focus{color:#fff;background:#de2b27}
+.footer .social-icons a:hover.linkedin,.footer .footer-col .social-icons a.linkedin:active,.footer .footer-col .social-icons a.linkedin:focus{color:#fff;background:#007ab5}
+.footer .social-icons{padding-top:0;text-align:left}
+.footer .footer-logo{margin-top:5px;text-align:left}
+.footer .footer-logo img{max-height:60px}
+.footer iframe{width:100%;margin-left:15px}
+.fixed-bg{background-attachment:fixed}
+p.copy{text-align:right;margin-top:20px;display:inline}
+.footer ul li{margin-bottom:5px}
+.footer ul li a{color:#4a4a4a;font-size:16px;font-weight: 400;}
+.footer-col h3 {
+    font-size: 30px;
+    line-height: 150%;
+    font-weight: 400;
+    margin-top: 0;
+}
+.footer-col .btn-default{color:#fff;background:#4CAF50;border:1px solid #fff;padding:10px 24px}
+.footer-col .btn-default:hover,.footer-col .btn-default:active,.footer-col .btn-default:focus{background:#4CAF50;color:#fff}
+.footer-col img{height:60px;margin-bottom:10px}
+.social-icons {
+  display:none;
+}
+.panel-title img{    top: -18px;}
+/* media queries */
+@media (min-width: 1200px) {
+  .container {
+    width: 1230px;
+  }
+}
+@media(max-width: 768px){
+  #row_msg, .products, #format-price{text-align: center;    margin-bottom: 10px;}
+  img.course_end_img {
+    max-width: 110px;
+    margin: auto;
+    padding: 10px 0;
+  }
+  span.Offer_sec{width: 85%;    font-size: 14px;}
+}
+
+
+
+
+</style>
+    
+      
+
+
+</head>
+
+<?php
+if($user->uid>0){ ?>
+
+<body class="page-node-3211">
+
+
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-W4FZMR"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+
+<!--LeadSquared Tracking Code Start-->
+<script type="text/javascript" src="https://web.mxradon.com/t/Tracker.js"></script>
+<script type="text/javascript">
+      pidTracker('3292');
+</script>
+<!--LeadSquared Tracking Code End-->
+
+<?php 
+
+$user_email = $user->mail;
+if($user_email){ ?>
+
+<script>
+dataLayer.push({
+  'userId' : '<?php print $user_email; ?>',
+  'event' : 'authentication'
+});
+
+
+$(document).ready(function(){
+  
+logMXWebEvent(3292, 198, 'Offer Form Filled');
+  
+window.productName = $(".product-name").text();
+
+window.productId = $(".products .row:nth-child(1) .pay-button").data("product-id");
+
+window.productPrice = $(".products .row:nth-child(1) #format-price h3").text();
+
+
+var testStr = $(".products .row:nth-child(1) .format-content1").text();
+
+var main_product = $(".product-name").text();
+
+if (testStr.indexOf("Online") !== -1 && main_product.indexOf("COMBO") !== -1) {
+    window.productCategory = "Bank and SSC - Learning - Online";
+  window.productBrand = "Bank and SSC";
+}else if (testStr.indexOf("Pendrive") !== -1 && main_product.indexOf("Bank") !== -1) {
+    window.productCategory = "SBI PO - Learning - Pendrive";
+  window.productBrand = "Bank";
+}else if(testStr.indexOf("SD Card") !== -1 && main_product.indexOf("Bank") !== -1){
+  window.productCategory = "SBI PO - Learning - SD Card";
+  window.productBrand = "Bank";
+}else if(testStr.indexOf("Online") !== -1 && main_product.indexOf("Bank") !== -1){
+  window.productCategory = "SBI PO - Learning - Online";
+  window.productBrand = "Bank";
+}else if(testStr.indexOf("Online") !== -1 && main_product.indexOf("SSC") !== -1){
+  window.productCategory = "SSC - Learning - Online";
+  window.productBrand = "SSC";
+}else if(testStr.indexOf("Pendrive") !== -1 && main_product.indexOf("SSC") !== -1){
+  window.productCategory = "SSC - Learning - Pendrive";
+  window.productBrand = "SSC";
+}else if(testStr.indexOf("Online") !== -1 && main_product.indexOf("SSC") !== -1){
+  window.productCategory = "SSC - Learning - Online";
+  window.productBrand = "SSC";
+}else if(main_product.indexOf("Insurance") !== -1){
+  window.productCategory = "Insurance - Learning - Online";
+  window.productBrand = "Insurance";
+}else if(main_product.indexOf("CTET") !== -1){
+  window.productCategory = "CTET - Learning - Online";
+  window.productBrand = "CTET";
+}else if(testStr.indexOf("Test Pack") !== -1 && main_product.indexOf("SBI PO") !== -1){
+  window.productCategory = "SBI PO - Test - Online";
+  window.productBrand = "SBI PO Mock Test";
+}else if(testStr.indexOf("Test Pack") !== -1 && main_product.indexOf("SSC") !== -1){
+  window.productCategory = "SSC CGL - Test";
+  window.productBrand = "SSC";
+}else if(testStr.indexOf("Test Pack") !== -1 && main_product.indexOf("NIACL") !== -1){
+  window.productCategory = "NIACL - Test";
+  window.productBrand = "NIACL";
+}else if(testStr.indexOf("Test Pack") !== -1 && main_product.indexOf("NICL") !== -1){
+  window.productCategory = "NICL - Test";
+  window.productBrand = "NICL";
+}
+
+if (window.productName.indexOf("SILVER") !== -1) {
+    window.productVariant = "SILVER";
+}else if(window.productName.indexOf("GOLD") !== -1){
+  window.productVariant = "GOLD";
+}else if(window.productName.indexOf("BRONZE") !== -1){
+  window.productVariant = "BRONZE";
+}else{
+  window.productVariant = "Platinum";
+}
+
+    dataLayer.push({
+    'event': 'checkout',
+    'ecommerce': {
+      'checkout': {
+        'actionField': {'step': 3, 'option': 'Lead Capture'},
+        'products': [{
+       'name': window.productName,  
+       'id': window.productId,  
+       'price': window.productPrice,
+       'brand': window.productBrand,
+       'category': window.productCategory,
+       'variant': window.productVariant,
+       'quantity': 1
+       }]
+     }
+   },
+   'event' : 'ecStep3'
+  });
+    
+    
+   
+// Measure adding a product to a shopping cart by using an 'add' actionFieldObject
+// to be added to next page /section / div when offer pop-up is successfully submitted  
+dataLayer.push({
+  'event': 'addToCart',
+  'ecommerce': {
+    'currencyCode': 'INR',
+    'add': {                                // 'add' actionFieldObject measures.
+      'products': [{                        //  adding a product to a shopping cart.
+           'name': window.productName,  //  Product Name, Name or ID is required.
+           'id': window.productId,      //  Product ID
+       'price': window.productPrice,    //  Display PRICE
+       'brand': window.productBrand,  //  BankersChoice / TeachersChoice / TechnoChoice
+       'category': window.productCategory,   // Bank - Online | Bank - Classroom | Bank - Pendrive | Bank - Online+Pendrive | Same format for SSC, RRB etc
+       'variant': window.productVariant,    // Platinum / Silver / Gold
+       'quantity': 1      // Program position left to right
+     // 
+     
+     
+       }]
+    }
+  }
+});
+    
+    
+    
+    
+    $('.format-button').on('click',function(e){
+      var mainName = $(".product-name").text();
+      window.selectName = mainName + $(this).closest('div').parent('div').parent('div').find('.format-content1 h3').text();
+      
+      window.selectId = $(this).closest('div').data("product-id");
+      
+      window.selectPrice = $(this).closest('div').parent('div').find('h3').text();
+
+
+      
+  dataLayer.push({
+    'event': 'checkout',
+    'ecommerce': {
+      'checkout': {
+        'actionField': {'step': 4, 'option': 'Select Format'},
+        'products': [{
+       'name': window.selectName,
+       'id': window.selectId, 
+       'price': window.selectPrice,
+       'brand': window.productBrand,
+       'category': window.productCategory,
+       'variant': window.productVariant,
+       'quantity': 1
+       }]
+     }
+   },
+   'event' : 'ecStep4'
+  });
+  
+  logMXWebEvent(3292, 198, 'Add-on Selected');
+
+    });
+    
+});
+
+
+
+</script>
+<?php } ?>
+
+
+<!-- ====== Header Section ====== -->
+<header id="top" class="top-line">
+  <div class="bg-color">
+    <div class="top">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="logo"><img src="/misc/revamp/images/logo.png"></div>
+          </div>
+          <div class="col-md-8 col-xs-12">
+             <h4 style="text-align: right;"><a href="tel:04067763553" style="color: #464646"><img src="misc/it-program-admissions/images/phone-call.png"> <b>040-6776 3553</b></a></h4>
+          </div>
+        </div>
+        <!-- end .top> .container> .row -->
+        <hr>
+      </div>
+      <!-- end .top> .container --> 
+    </div>
+    <!-- end .top --> 
+  </div>
+  <!-- end .bg-color --> 
+</header>
+<!-- ====== End Header Section ====== -->
+
+
+<!-- ====== Payment Section ====== -->
+<div class="payment-bg">
+  <div class="container">
+    <div class="row">
+    <!-- ====== Main Section ====== -->
+      <div class="col-md-8 pay-section" role="main">
+        <!--<h2>You have chosen "<span class='product-name'></span>"</h2>-->
+    <div class="top_promo">
+    <!--camp-->
+     <!-- <img src="/misc/camp-05-11-2018/Diwali-Top-Strip_45_v1.png"/> <span class="Offer_sec">Only <span id="Timer"></span> Left</span>
+      <span class="Offer_sec">Call 040 6776 3553 for Special Offers</span>  -->
+    </div>
+        
+        <div class="panel-group" id="accordion">
+          <div class="panel panel-default">
+          <a data-toggle="collapse" data-parent="#accordion" href="#format" class="accordion-toggle">
+            <div class="panel-heading" >
+              <h4 class="panel-title"> <img src="/misc/payment/images/1.png"> Choose Coaching <i class="indicator fa fa-chevron-down pull-right"></i> </h4>
+            </div>
+            </a>
+            <div id="format" class="panel-collapse accordion-body collapse in">
+    
+      <div id="products">
+  <div id="products">
+      <!-- Content Start -->
+      <div class="panel-body" style="padding-top:40px; padding-bottom:20px;">
+        <div class='products'></div>
+
+                
+              </div>
+     
+     
+      <!-- Content End -->
+  </div>
+</div>
+      
+      
+              
+            </div>
+          </div>          
+          
+          <div class="panel panel-default"> <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="javascript:void(0)">
+            <div class="panel-heading" >
+              <h4 class="panel-title"> <img src="/misc/payment/images/2.png"> Choose offer <i class="indicator fa fa-chevron-down pull-right"></i></h4>
+            </div>
+            </a>
+      
+       <div id="offer" class="panel-collapse accordion-body collapse">
+          <div class="panel-body">
+          
+          
+          
+          <div id="offers">
+    <div id="offers">
+
+                <div class="products-coupons">
+        
+        </div>
+        
+                <hr>
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="format-icon"> <img src="/misc/payment/images/offer_v1.png" style="height: 40px;"  > </div>
+                    <div class="format-content">
+                      <h4>Have a Coupon Code?</h4>
+            <p class="coupon_sec">Use <b>DIWALI45</b> to get flat <b>45% off</b></p>
+                    </div>
+                  </div>
+                  <div class="col-md-6 col-md-offset-0 format-price col-xs-offset-3">
+                    <div id="ck-button">
+                      <input type="text" value="" name="button3" class="offer-box" placeholder="Enter Code">
+                       <label href="#address">
+                          <input id="bank-offer-link" type="radio" value="8" name="button2" onclick="final(window.productId, jQuery('.offer-box').val())" class="cta-submit btn offers-button"><span ><i class="fa fa-caret-right"></i> Apply Now</span>
+                       </label>
+                  </div>
+                  </div>
+                </div>
+
+            
+    </div>
+</div>
+          
+          
+          </div>
+       </div>
+      
+            
+          </div>
+          
+          <div class="panel panel-default"> <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="javascript:void(0)">
+            <div class="panel-heading" >
+              <h4 class="panel-title"> <img src="/misc/payment/images/3.png"> Update details <i class="indicator fa fa-chevron-down pull-right"></i></h4>
+            </div>
+            </a>
+          </div>
+        </div>
+      </div>
+      <!-- ====== End Main Section ====== -->
+      
+  <div class="col-md-4 side_bar hidden-xs">
+    <img src="misc/Slide-Design_v1.png?v1" class="img-responsive right_img"/>
+  </div>
+      <!-- ====== End Sidebar Section ====== -->
+    </div>
+  </div>
+</div>
+
+<!-- ====== End Payment Section ====== -->
+
+<?php if (!isset($_SESSION['sms']))
+{ ?>
+
+<!-- <script>
+$.ajax({
+    url: 'https://www.talentsprint.com/sms-trigger.dpl',
+    type: "POST",
+    success: function(data){
+      console.log("sms triggered");
+    }
+});
+</script> -->
+
+<?php 
+$_SESSION['sms'];
+} ?>
+<!-- ====== Copyright Section ====== -->
+<?php include "sites/all/themes/starter/templates/new-online-footer.html";?>
+<!-- ====== End Copyright Section ====== --> 
+
+<!-- Bootstrap 3.2.0 js --> 
+<script src="/misc/payment/js/bootstrap.min.js"></script> 
+
+<script>
+
+/*
+
+$(document).ready(function(){
+
+$( ".pay-button" ).click(function() {
+if($(".products-coupons .coupon-block").length > 2){
+$(".products-coupons .coupon-block:nth-child(1)").addClass("light");
+};
+
+}); 
+
+});
+*/
+
+
+$(document).ready(function(){
+
+
+$( ".pay-button" ).click(function() {
+
+  $( ".co_mrp strike" ).after( '<i class="fa fa-inr" aria-hidden="true"></i>' );  
+  
+  if (jQuery(".coupon-block h5:contains('Lightning')").length) {
+    $(".products-coupons .coupon-block:nth-last-child(1)").addClass("light");       
+}
+
+if (jQuery(".coupon-block h5:contains('MRP')").length) {
+    $(".products-coupons .coupon-block:nth-child(1)").addClass("mrp");       
+}
+
+if (jQuery(".coupon-block h5:contains('Group Scholarship')").length) {
+  $(".products-coupons .coupon-block:nth-child(4)").addClass("gsp");      
+}
+
+
+if (jQuery(".coupon-block h5:contains('Women Scholarship')").length) {
+  $(".products-coupons .coupon-block:nth-child(3)").addClass("women_scholar");      
+}
+
+if (jQuery(".coupon-block h5:contains('Discount')").length) {
+    $(this).parent.addClass("diacount");       
+}
+
+
+
+// change icons 
+
+//Change MRP row icon
+$(".products-coupons h5:contains(MRP)").parent().parent().find('img').attr('src','/misc/payment/images/mrp.png' );
+//Change Apply now row icon
+$(".products-coupons h5:contains(Apply)").parent().parent().find('img').attr('src','/misc/payment/images/discount.png' );
+//Change Women now row icon
+$(".products-coupons h5:contains(Women Scholarship)").parent().parent().find('img').attr('src','/misc/payment/images/women.png' );
+//Change Group now row icon
+$(".products-coupons h5:contains(Group Scholarship)").parent().parent().find('img').attr('src','/misc/payment/images/group.png' );
+//Change Group now row icon
+$(".row .col-md-4 h4:contains(Have a Coupon Code)").parent().parent().find('img').attr('src','/misc/payment/images/coupon.png' );
+// hide group row apply button
+//$(".products-coupons h5:contains(Group Scholarship)").parent().parent().next().find('#ck-button').hide();
+// number added for group scholarship
+$(".products-coupons h5:contains(Group Scholarship)").parent().parent().next().find('#ck-button label span').html('<i class="fa fa-phone"></i> 7093995486');
+// disabled the contact number button 
+$(".products-coupons h5:contains(Group Scholarship)").parent().parent().next().find('#ck-button input').attr('disabled', 'disabled');
+// add css for contact number button 
+$(".products-coupons .coupon-block:last-child #ck-button span").css('padding','4px 20px 4px');
+// hide the mrp section
+$('.mrp').hide();
+// hide the woman offer section for campaign
+//$('.WS_20,.WS_25,.WS_15,.RRB_ALP_15').hide();
+$('.gsp , .women_scholar').hide(); // hide group scholarship tab for womens campaign
+$(".products-coupons h5:contains(Group Scholarship)").parent().parent().parent().hide();
+}); 
+
+  // added for swap the 3 months program to top in Bank&ssc SD card
+  if(window.location.href.indexOf("category=bank-os&bu=Bank") > -1 || window.location.href.indexOf("category=ssc-os&bu=Bank") > -1) {
+      $('.products .row h3:contains(3 Months Subscription)').parent().parent().parent().addClass('3_months')
+      $('.products .row.3_months').prependTo( $( ".products" ))
+      $('.products hr').eq(1).insertAfter( $( ".row.3_months" ) );
+  }
+
+
+setTimeout(function(){ 
+  $('.row.deny .addon-price').hide(); 
+  $('#takeback').attr('onclick','window.history.back()');
+  $('.row.deny .addon-icon').css('border','0px'); 
+  
+  $( ".row.3370" ).insertBefore( $( ".row.3318" ) );
+  $( ".row.3318" ).insertBefore( $( ".row.3200" ) );
+  $( ".row.3397" ).insertBefore( $( ".row.3370" ) );
+  $( ".row.3406" ).insertBefore( $( ".row.3370" ) );
+  $( ".row.3407" ).insertBefore( $( ".row.3370" ) );
+
+
+  $('#ck-button-3397 span, #ck-button-3200 span').text('Closed');
+  $('#ck-button-3397, #ck-button-3200').removeAttr('href');
+   $('#ck-button-3397.pay-button label span, #ck-button-3200.pay-button label span').css({'cursor':'not-allowed','background':'gray','border-color':'gray','color':'#fff'});
+  
+  $('.row.3397 #row_msg').on('click',function(){
+    url = "https://helpdesk.examprep.talentsprint.com/en-us/article/ibps-clerk-crash-course-jxm0se/?1541223494046";
+    window.open(url, "_blank");
+  });
+
+  $('.row.3407 p').on('click',function(){
+    url = "https://helpdesk.examprep.talentsprint.com/en-us/article/opsc-aso-crash-course-lrx0eu/?1541223278322";
+    window.open(url, "_blank");
+  });
+  $('.row.3406 p').on('click',function(){
+    url = "https://helpdesk.examprep.talentsprint.com/en-us/article/ssc-cgl-crash-course-gatqlw/?1541223278322";
+    window.open(url, "_blank");
+  });
+  
+  $('.row.3370 p, .row.3318 p , .row.3200 p').on('click',function(){
+    url = "https://helpdesk.examprep.talentsprint.com/en-us/article/bank-ssc-and-govt-exams-premium-coaching-j6744r/?1541223587468";
+    window.open(url, "_blank");
+  });
+  <?php if(!array_key_exists('385', $user_roles)){ // EP SPECIAL
+    echo "$('.row.3407').hide();";
+  }
+  ?>
+  
+  $('.row.3397 .admissions, .row.3200 .admissions').show();
+  
+  if(window.innerWidth < 480){
+    $('.3397 .addon-icon').attr('src','/misc/IBPS-Clerk-Icon-for-Mobile.png');
+    $('.3406 .addon-icon').attr('src','/misc/SSC-CGL-Icon-for-Mobile.png');
+    $('.3407 .addon-icon').attr('src','/misc/OPSC-ASO-Icon-for-Mobile.png');
+    $('.3370 .addon-icon , .3318 .addon-icon , .3200 .addon-icon').attr('src','/misc/All-Exams-Icon-for-Mobile.png');
+  }
+  
+  // show course ending image
+  $('.course_end_img').hide();
+  //$('.row.3200 .course_end_img').show();
+  // $('.row.3397 .course_end_img').show();
+  $('.row.3407 .course_end_img').show();
+ }, 0);
+
+
+// countdown timer
+
+// Set the date we're counting down to
+var countDownDate = new Date("Nov 08, 2018 24:00:00").getTime();
+
+// Update the count down every 1 second
+var x = setInterval(function() {
+
+    // Get todays date and time
+    var now = new Date().getTime();
+    
+    // Find the distance between now and the count down date
+    var distance = countDownDate - now;
+    
+    // Time calculations for days, hours, minutes and seconds
+    var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+    var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    
+    // Output the result in an element with id="demo"
+    $('#Timer').text(hours + " hours " + minutes + " min " + seconds + " sec ");
+    
+    // If the count down is over, write some text 
+    if (distance < 0) {
+        clearInterval(x);
+        window.countdown = "EXPIRED";
+    }
+}, 1000);
+
+ 
+});
+
+</script>
+
+</body>
+
+<?php } else{
+  header("Location: https://www.talentsprint.com/");
+  return;
+  
+  }
+ ?>
+
+<script type="text/javascript">window.$crisp=[];window.CRISP_WEBSITE_ID="1df8e88a-1a2b-462c-9e21-aaf0fe004266";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();</script>
+
+</html>
